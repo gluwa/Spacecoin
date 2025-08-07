@@ -2,10 +2,8 @@ require('dotenv');
 const { expect } = require('chai');
 const { ethers, network } = require('hardhat');
 const Chance = require('chance');
-const TestHelper = require('./shared');
-const SignHelper = require('./signature');
-const ErrorMessages = require('./errorMessages');
-
+const TestHelper = require('../shared/helper');
+const SignHelper = require('../shared/signature');
 let owner;
 let user1;
 let user2;

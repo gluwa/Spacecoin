@@ -1,8 +1,8 @@
 require('dotenv');
 const { expect } = require('chai');
 const { ethers, network } = require('hardhat');
-const TestHelper = require('./shared');
-const SignHelper = require('./signature');
+const TestHelper = require('../shared/helper');
+const SignHelper = require('../shared/signature');
 
 let owner;
 let user1;
@@ -10,7 +10,6 @@ let user2;
 let user3;
 let SpaceCoin;
 let provider;
-const zeroAddress = '0x0000000000000000000000000000000000000000';
 
 describe('SpaceCoin - Ethless Permit functions', function () {
     before(async () => {
