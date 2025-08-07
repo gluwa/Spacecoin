@@ -1,0 +1,33 @@
+{
+  "name": "spacecoin",
+  "version": "1.0.0",
+  "description": "Spacecoin contracts",
+  "main": "index.js",
+  "license": "GPL V3",
+  "keywords": [
+    "ethereum",
+    "smart-contract",
+    "token",
+    "contract"
+  ],
+  "scripts": {
+    "test": "npx hardhat test && forge test",
+    "prettier-test": "prettier --write test/",
+    "prettier-contracts": "prettier --write contracts/"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.4.0",
+    "hardhat": "^2.26.1"
+  },
+  "pre-commit": [
+    "prettier-test",
+    "prettier-contracts"
+  ],
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^6.1.0",
+    "dotenv": "^17.2.1",
+    "ethers": "^6.15.0",
+    "prettier": "^3.6.2",
+    "prettier-plugin-solidity": "^2.1.0"
+  }
+}
