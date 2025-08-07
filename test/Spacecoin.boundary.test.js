@@ -1,14 +1,10 @@
 require('dotenv');
-const { expect, use } = require('chai');
-const { solidity } = require('ethereum-waffle');
+const { expect } = require('chai');
 const { ethers, network } = require('hardhat');
 const Chance = require('chance');
 const TestHelper = require('./shared');
 const SignHelper = require('./signature');
 const ErrorMessages = require('./errorMessages');
-const errorMessages = require('./errorMessages');
-
-use(solidity);
 
 let owner;
 let user1;

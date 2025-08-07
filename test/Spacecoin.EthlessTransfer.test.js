@@ -1,19 +1,15 @@
 require('dotenv');
-const { expect, use } = require('chai');
-const { solidity } = require('ethereum-waffle');
-const { ethers, network } = require('hardhat');
+const { expect } = require('chai');
+const { ethers } = require('hardhat');
 const TestHelper = require('./shared');
 const SignHelper = require('./signature');
 const ErrorMessages = require('./errorMessages');
-use(solidity);
-
 let owner;
 let user1;
 let user2;
 let user3;
 let SpaceCoin;
 let provider;
-const zeroAddress = '0x0000000000000000000000000000000000000000';
 
 const feeToPay = 0;
 

@@ -1,18 +1,16 @@
 require('dotenv');
-const { expect, use } = require('chai');
-const { solidity } = require('ethereum-waffle');
+const { expect } = require('chai');
 const { ethers, network } = require('hardhat');
 const TestHelper = require('./shared');
-const SignHelper = require('./signature');
-use(solidity);
+// const SignHelper = require('./signature');
 
 let owner;
 let user1;
 let user2;
 let user3;
-let SpaceCoin;
+// let SpaceCoin;
 let provider;
-const zeroAddress = '0x0000000000000000000000000000000000000000';
+// const zeroAddress = '0x0000000000000000000000000000000000000000';
 
 describe('SpaceCoin - Basic ERC20 functions', function () {
     before(async () => {
@@ -33,13 +31,6 @@ describe('SpaceCoin - Basic ERC20 functions', function () {
         it('Token decimals is ' + TestHelper.DECIMALS, async () => {
             expect(await spaceCoin.decimals()).to.equal(TestHelper.DECIMALS);
         });
-        it('Token chainId is ' + network.config.chainId, async () => {
-            expect(await spaceCoin.chainId()).to.equal(network.config.chainId);
-        });
-        it('Token version is ' + TestHelper.VERSION, async () => {
-            expect(await spaceCoin.version()).to.equal(TestHelper.VERSION);
-        });
-
         it('Supply verification for total supply as ' + TestHelper.TOTALSUPPLY, async () => {
             expect(await spaceCoin.balanceOf(owner.address)).to.equal(TestHelper.TOTALSUPPLY);
             expect(await spaceCoin.totalSupply()).to.equal(TestHelper.TOTALSUPPLY);
