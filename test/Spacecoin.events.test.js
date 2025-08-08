@@ -1,10 +1,7 @@
 require('dotenv');
-const { expect, use } = require('chai');
-const { solidity } = require('ethereum-waffle');
-const { ethers, network } = require('hardhat');
-const TestHelper = require('./shared');
-const SignHelper = require('./signature');
-use(solidity);
+const { expect } = require('chai');
+const { ethers } = require('hardhat');
+const TestHelper = require('../shared/helper');
 
 let owner;
 let user1;

@@ -1,19 +1,17 @@
 require('dotenv').config({ path: __dirname + '/.env.development' });
-const { ethers, network, addressBook, upgrades } = require('hardhat');
-const { expect, use } = require('chai');
-const { solidity } = require('ethereum-waffle');
+const { ethers, network, addressBook } = require('hardhat');
+const { expect } = require('chai');
 const SignHelper = require('./signature');
-use(solidity);
 
 const NAME = 'Spacecoin';
 const SYMBOL = 'SPC';
 const DECIMALS = 18;
-const TOTALSUPPLY = ethers.utils.parseUnits('100000000000', DECIMALS);
+const TOTALSUPPLY = ethers.parseUnits('100000000000', DECIMALS);
 const VERSION = '1';
 const VERSION_712 = '1';
 
-const STANDARD_MINT_AMOUNT = ethers.utils.parseEther('1000');
-const ETHLESS_TRANSFER_SIGNATURE = 'transferBySignature(address,address,uint256,uint256,uint8,bytes32,bytes32)';
+const STANDARD_MINT_AMOUNT = ethers.parseEther('1000');
+const ETHLESS_TRANSFER_SIGNATURE = 'transferWithAuthorization(address,address,uint256,uint256,uint256,bytes32,uint8,bytes32,bytes32)';
 
 let skipInitializeContracts = false;
 
@@ -22,6 +20,10 @@ if (process.env.LOGLEVEL == undefined) process.env.LOGLEVEL = 0;
 
 const getRandomIntInRange = (min, max) => {
     return Math.floor(Math.random() * (max - min + 1)) + min;
+};
+
+const generateNonce = () => {
+    return '0x' + require('crypto').randomBytes(32).toString('hex');
 };
 
 const setupProviderAndWallet = async () => {
@@ -38,22 +40,7 @@ const setupProviderAndWallet = async () => {
     } else {
         provider = new ethers.providers.JsonRpcProvider(network.config.url);
     }
-    const owner = new ethers.Wallet(
-        ethers.Wallet.fromMnemonic(network.config.accounts.mnemonic, `m/44'/60'/0'/0/0`).privateKey,
-        provider
-    );
-    const user1 = new ethers.Wallet(
-        ethers.Wallet.fromMnemonic(network.config.accounts.mnemonic, `m/44'/60'/0'/0/1`).privateKey,
-        provider
-    );
-    const user2 = new ethers.Wallet(
-        ethers.Wallet.fromMnemonic(network.config.accounts.mnemonic, `m/44'/60'/0'/0/2`).privateKey,
-        provider
-    );
-    const user3 = new ethers.Wallet(
-        ethers.Wallet.fromMnemonic(network.config.accounts.mnemonic, `m/44'/60'/0'/0/3`).privateKey,
-        provider
-    );
+    const [owner, user1, user2, user3] = await ethers.getSigners();
     return [provider, owner, user1, user2, user3];
 };
 
@@ -62,40 +49,39 @@ const setupContractTesting = async (owner) => {
         initialBlockGATE = await ethers.provider.getBlockNumber();
     }
     const FactorySpaceCoin = await ethers.getContractFactory('SpaceCoin');
-    let SpaceCoin;
+    let spaceCoin;
     if (network.name === 'hardhat') {
-        SpaceCoin = await FactoryspaceCoin.deploy(owner.address, NAME, SYMBOL, TOTALSUPPLY);
+        spaceCoin = await FactorySpaceCoin.deploy(await owner.getAddress(), NAME, SYMBOL, TOTALSUPPLY);
 
-        await spaceCoin.deployed();
+        await spaceCoin.waitForDeployment();
     } else {
         const SpaceCoinAddress = await addressBook.retrieveContract('SpaceCoin', network.name);
 
-        SpaceCoin = await new ethers.Contract(SpaceCoinAddress, FactoryspaceCoin.interface, owner.address);
+        spaceCoin = await new ethers.Contract(SpaceCoinAddress, FactorySpaceCoin.interface, await owner.getAddress());
         if (!skipInitializeContracts) {
             try {
                 await spaceCoin.name();
             } catch (e) {
-                await spaceCoin.initialize(owner.address, NAME, SYMBOL, TOTALSUPPLY);
+                await spaceCoin.initialize(await owner.getAddress(), NAME, SYMBOL, TOTALSUPPLY);
             }
         }
     }
-    return [SpaceCoin];
+    return [spaceCoin];
 };
 
 const txn = async (input, to, sender, ethers, provider) => {
-    const txCount = await provider.getTransactionCount(sender.address);
+    const txCount = await provider.getTransactionCount(await sender.getAddress());
     const rawTx = {
         chainId: network.config.chainId,
-        nonce: ethers.utils.hexlify(txCount),
+        nonce: txCount,
         to: to,
         value: 0x00,
-        gasLimit: ethers.utils.hexlify(3000000),
-        gasPrice: network.name !== 'kaleido' ? ethers.utils.hexlify(25000000000) : ethers.utils.hexlify(0),
+        gasLimit: 3000000,
+        gasPrice: network.name !== 'kaleido' ? 25000000000 : 0,
         data: input.data
     };
-    const rawTransactionHex = await sender.signTransaction(rawTx);
-    const { hash } = await provider.sendTransaction(rawTransactionHex);
-    return await provider.waitForTransaction(hash);
+    const tx = await sender.sendTransaction(rawTx);
+    return await tx.wait();
 };
 
 const submitTxnAndCheckResult = async (input, to, from, ethers, provider, errMsg) => {
@@ -132,7 +118,7 @@ const waitForNumberOfBlock = async (provider, numberOfBlock) => {
     }
 };
 
-const executePermitFlow = async (provider, SpaceCoin, owner, spender, submitter, amountToPermit) => {
+const executePermitFlow = async (provider, spaceCoin, owner, spender, submitter, amountToPermit) => {
     const [blockNumber, nonce] = await Promise.all([provider.getBlockNumber(), spaceCoin.nonces(owner.address)]);
 
     const block = await provider.getBlock(blockNumber);
@@ -142,26 +128,22 @@ const executePermitFlow = async (provider, SpaceCoin, owner, spender, submitter,
     const splitSignature = await SignHelper.signPermit(
         NAME,
         VERSION_712,
-        spaceCoin.address,
+        await spaceCoin.getAddress(),
         owner,
-        spender.address,
+        await spender.getAddress(),
         amountToPermit,
-        nonce.toNumber(),
+        nonce,
         expirationTimestamp
     );
-
-    // Prepare the transaction input
-    const input = await spaceCoin.populateTransaction.permit(
-        owner.address,
-        spender.address,
+    await spaceCoin.connect(submitter).permit(
+        await owner.getAddress(),
+        await spender.getAddress(),
         amountToPermit,
         expirationTimestamp,
         splitSignature.v,
         splitSignature.r,
         splitSignature.s
     );
-
-    await submitTxnAndCheckResult(input, spaceCoin.address, submitter, ethers, provider, 0);
 };
 
 module.exports = {
@@ -181,5 +163,6 @@ module.exports = {
     submitTxnAndCheckResult,
     waitForNumberOfBlock,
     executePermitFlow,
-    getRandomIntInRange
+    getRandomIntInRange,
+    generateNonce
 };

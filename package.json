@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "^5.4.0",
+    "chance": "^1.1.13",
     "hardhat": "^2.26.1"
   },
   "pre-commit": [
