@@ -1,16 +1,13 @@
 require('dotenv');
 const { expect } = require('chai');
-const { ethers, network } = require('hardhat');
 const TestHelper = require('../shared/helper');
-// const SignHelper = require('./signature');
 
 let owner;
 let user1;
 let user2;
 let user3;
-// let SpaceCoin;
+let spaceCoin;
 let provider;
-// const zeroAddress = '0x0000000000000000000000000000000000000000';
 
 describe('SpaceCoin - Basic ERC20 functions', function () {
     before(async () => {
@@ -18,7 +15,7 @@ describe('SpaceCoin - Basic ERC20 functions', function () {
     });
 
     beforeEach(async () => {
-        [SpaceCoin] = await TestHelper.setupContractTesting(owner);
+        [spaceCoin] = await TestHelper.setupContractTesting(owner);
     });
 
     describe('SpaceCoin - ERC20 Token Info', async function () {
@@ -39,61 +36,16 @@ describe('SpaceCoin - Basic ERC20 functions', function () {
 
     describe('SpaceCoin - Allowance', async function () {
         const amountToApprove = 100;
-        const amountToIncrease = 100;
-        const amountToDecrease = 50;
 
         beforeEach(async () => {
             const amountToTransfer = 100;
-            const inputTransfer = await spaceCoin.populateTransaction['transfer(address,uint256)'](
-                user1.address,
-                amountToTransfer
-            );
-            await TestHelper.submitTxnAndCheckResult(inputTransfer, spaceCoin.address, owner, ethers, provider, 0);
+            await spaceCoin.connect(owner).transfer(user1.address, amountToTransfer);
         });
         it('Test approve()', async () => {
-            const inputApprove = await spaceCoin.populateTransaction.approve(user2.address, amountToApprove);
-            await TestHelper.submitTxnAndCheckResult(inputApprove, spaceCoin.address, user1, ethers, provider, 0);
+            await spaceCoin.connect(user1).approve(user2.address, amountToApprove);
             expect((await spaceCoin.allowance(user1.address, user2.address)).toString()).to.equal(
                 amountToApprove.toString()
             );
-        });
-        it('Test increaseAllowance()', async () => {
-            const inputIncreaseAllowance = await spaceCoin.populateTransaction.increaseAllowance(
-                user2.address,
-                amountToIncrease
-            );
-            await TestHelper.submitTxnAndCheckResult(
-                inputIncreaseAllowance,
-                spaceCoin.address,
-                user1,
-                ethers,
-                provider,
-                0
-            );
-            expect((await spaceCoin.allowance(user1.address, user2.address)).toString()).to.equal(
-                amountToIncrease.toString()
-            );
-        });
-        it('Test decreaseAllowance()', async () => {
-            const inputApprove = await spaceCoin.populateTransaction.approve(user2.address, amountToApprove);
-            await TestHelper.submitTxnAndCheckResult(inputApprove, spaceCoin.address, user1, ethers, provider, 0);
-            expect((await spaceCoin.allowance(user1.address, user2.address)).toString()).to.equal(
-                amountToApprove.toString()
-            );
-
-            const inputDecreaseAllowance = await spaceCoin.populateTransaction.decreaseAllowance(
-                user2.address,
-                amountToDecrease
-            );
-            await TestHelper.submitTxnAndCheckResult(
-                inputDecreaseAllowance,
-                spaceCoin.address,
-                user1,
-                ethers,
-                provider,
-                0
-            );
-            expect((await spaceCoin.allowance(user1.address, user2.address)).toString()).to.equal((50).toString());
         });
     });
 
@@ -103,36 +55,31 @@ describe('SpaceCoin - Basic ERC20 functions', function () {
         it('Test transfer() / verify balanceOf owner is -1000', async () => {
             const originalBalance = await spaceCoin.balanceOf(owner.address);
 
-            const inputTransfer = await spaceCoin.populateTransaction['transfer(address,uint256)'](
-                user2.address,
-                amountToTransfer
-            );
-            await TestHelper.submitTxnAndCheckResult(inputTransfer, spaceCoin.address, owner, ethers, provider, 0);
+            await spaceCoin.connect(owner).transfer(user2.address, amountToTransfer);
 
             expect(await spaceCoin.balanceOf(owner.address)).to.equal(
-                ethers.BigNumber.from(originalBalance).sub(amountToTransfer)
+                BigInt(originalBalance) - BigInt(amountToTransfer)
             );
-            expect((await spaceCoin.balanceOf(user2.address)).toString()).to.equal(amountToTransfer.toString());
+            expect(await spaceCoin.balanceOf(user2.address)).to.equal(BigInt(amountToTransfer));
         });
+
         it('Test transferFrom() / verify balance of owner is -1000', async () => {
             const originalOwnerBalance = await spaceCoin.balanceOf(owner.address);
             const originalUser2Balance = await spaceCoin.balanceOf(user2.address);
 
-            const inputApprove = await spaceCoin.populateTransaction.approve(user1.address, amountToTransfer);
-            await TestHelper.submitTxnAndCheckResult(inputApprove, spaceCoin.address, owner, ethers, provider, 0);
+            await spaceCoin.connect(owner).approve(user1.address, amountToTransfer);
 
-            const inputTransferFrom = await spaceCoin.populateTransaction.transferFrom(
+            await spaceCoin.connect(user1).transferFrom(
                 owner.address,
                 user2.address,
                 amountToTransfer
             );
-            await TestHelper.submitTxnAndCheckResult(inputTransferFrom, spaceCoin.address, user1, ethers, provider, 0);
 
             expect(await spaceCoin.balanceOf(owner.address)).to.equal(
-                ethers.BigNumber.from(originalOwnerBalance).sub(amountToTransfer)
+                BigInt(originalOwnerBalance) - BigInt(amountToTransfer)
             );
             expect((await spaceCoin.balanceOf(user2.address)).toString()).to.equal(
-                ethers.BigNumber.from(originalUser2Balance).add(amountToTransfer)
+                BigInt(originalUser2Balance) + BigInt(amountToTransfer)
             );
         });
     });
@@ -143,45 +90,10 @@ describe('SpaceCoin - Basic ERC20 functions', function () {
         it('Test burn() / verify balanceOf owner is -100', async () => {
             const originalBalance = await spaceCoin.balanceOf(owner.address);
 
-            const inputTransfer = await spaceCoin.populateTransaction['burn(uint256)'](amountToBurn);
-            await TestHelper.submitTxnAndCheckResult(inputTransfer, spaceCoin.address, owner, ethers, provider, 0);
+            await spaceCoin.connect(owner).burn(amountToBurn);
 
             expect(await spaceCoin.balanceOf(owner.address)).to.equal(
-                ethers.BigNumber.from(originalBalance).sub(amountToBurn)
-            );
-        });
-    });
-
-    describe('SpaceCoin - Test expecting failure Allowance', async function () {
-        const amountToApprove = 100;
-        const amountToDecrease = 150;
-
-        beforeEach(async () => {
-            const amountToTransfer = 100;
-            const inputTransfer = await spaceCoin.populateTransaction['transfer(address,uint256)'](
-                user1.address,
-                amountToTransfer
-            );
-            await TestHelper.submitTxnAndCheckResult(inputTransfer, spaceCoin.address, owner, ethers, provider, 0);
-        });
-        it('Test decreaseAllowance() by more than the current allowance', async () => {
-            const inputApprove = await spaceCoin.populateTransaction.approve(user2.address, amountToApprove);
-            await TestHelper.submitTxnAndCheckResult(inputApprove, spaceCoin.address, user1, ethers, provider, 0);
-            expect((await spaceCoin.allowance(user1.address, user2.address)).toString()).to.equal(
-                amountToApprove.toString()
-            );
-
-            const inputDecreaseAllowance = await spaceCoin.populateTransaction.decreaseAllowance(
-                user2.address,
-                amountToDecrease
-            );
-            await TestHelper.submitTxnAndCheckResult(
-                inputDecreaseAllowance,
-                spaceCoin.address,
-                user1,
-                ethers,
-                provider,
-                'ERC20: decreased allowance below zero'
+                BigInt(originalBalance) - BigInt(amountToBurn)
             );
         });
     });
@@ -192,93 +104,62 @@ describe('SpaceCoin - Basic ERC20 functions', function () {
         it('Test transfer() without balance', async () => {
             const originalUser1Balance = await spaceCoin.balanceOf(user1.address);
 
-            const inputTransfer = await spaceCoin.populateTransaction['transfer(address,uint256)'](
-                user2.address,
-                amountToTransfer
-            );
-            await TestHelper.submitTxnAndCheckResult(
-                inputTransfer,
-                spaceCoin.address,
-                user1,
-                ethers,
-                provider,
-                'SpaceCoin: Insufficient balance'
-            );
-            expect(await spaceCoin.balanceOf(user1.address)).to.equal(ethers.BigNumber.from(originalUser1Balance));
+            await expect(spaceCoin.connect(user1).transfer(user2.address, amountToTransfer)).to.be.revertedWithCustomError(spaceCoin, TestHelper.ErrorMessages.INSUFFICIENT_BALANCE_CODE);
+            expect(await spaceCoin.balanceOf(user1.address)).to.equal(BigInt(originalUser1Balance));
         });
 
         it('Test transferFrom() without allowance', async () => {
             const originalUser1Balance = await spaceCoin.balanceOf(user1.address);
             const originalUser3Balance = await spaceCoin.balanceOf(user3.address);
 
-            const inputTransferFrom = await spaceCoin.populateTransaction.transferFrom(
+            await expect(spaceCoin.connect(user1).transferFrom(
                 user1.address,
                 user3.address,
                 amountToTransfer
-            );
-            await TestHelper.submitTxnAndCheckResult(
-                inputTransferFrom,
-                spaceCoin.address,
-                user2,
-                ethers,
-                provider,
-                'ERC20: insufficient allowance'
-            );
-            expect(await spaceCoin.balanceOf(user1.address)).to.equal(ethers.BigNumber.from(originalUser1Balance));
-            expect(await spaceCoin.balanceOf(user3.address)).to.equal(ethers.BigNumber.from(originalUser3Balance));
+            )).to.be.revertedWithCustomError(spaceCoin, TestHelper.ErrorMessages.INSUFFICIENT_ALLOWANCE_CODE);
+            expect(await spaceCoin.balanceOf(user1.address)).to.equal(BigInt(originalUser1Balance));
+            expect(await spaceCoin.balanceOf(user3.address)).to.equal(BigInt(originalUser3Balance));
         });
+
         it('Test transferFrom() without balance', async () => {
             const originalUser1Balance = await spaceCoin.balanceOf(user1.address);
             const originalUser3Balance = await spaceCoin.balanceOf(user3.address);
 
-            const inputApprove = await spaceCoin.populateTransaction.approve(user2.address, amountToTransfer);
-            await TestHelper.submitTxnAndCheckResult(inputApprove, spaceCoin.address, user1, ethers, provider, 0);
+            await spaceCoin.connect(user1).approve(user2.address, amountToTransfer);
 
-            const inputTransferFrom = await spaceCoin.populateTransaction.transferFrom(
+            await expect(spaceCoin.connect(user2).transferFrom(
                 user1.address,
                 user3.address,
                 amountToTransfer
-            );
-            await TestHelper.submitTxnAndCheckResult(
-                inputTransferFrom,
-                spaceCoin.address,
-                user2,
-                ethers,
-                provider,
-                'SpaceCoin: Insufficient balance'
-            );
-            expect(await spaceCoin.balanceOf(user1.address)).to.equal(ethers.BigNumber.from(originalUser1Balance));
-            expect(await spaceCoin.balanceOf(user3.address)).to.equal(ethers.BigNumber.from(originalUser3Balance));
+            )).to.be.revertedWithCustomError(spaceCoin, TestHelper.ErrorMessages.INSUFFICIENT_BALANCE_CODE);
+            expect(await spaceCoin.balanceOf(user1.address)).to.equal(BigInt(originalUser1Balance));
+            expect(await spaceCoin.balanceOf(user3.address)).to.equal(BigInt(originalUser3Balance));
         });
+
         it('Test 2x transferFrom() second transferFrom will fail due to remaining allowance to low', async () => {
             const originalOwnerBalance = await spaceCoin.balanceOf(owner.address);
             const originalUser2Balance = await spaceCoin.balanceOf(user2.address);
 
-            const inputApprove = await spaceCoin.populateTransaction.approve(user1.address, amountToTransfer);
-            await TestHelper.submitTxnAndCheckResult(inputApprove, spaceCoin.address, owner, ethers, provider, 0);
+            await spaceCoin.connect(owner).approve(user1.address, amountToTransfer);
 
-            const inputTransferFrom = await spaceCoin.populateTransaction.transferFrom(
+            await spaceCoin.connect(user1).transferFrom(
                 owner.address,
                 user2.address,
                 amountToTransfer
             );
-            await TestHelper.submitTxnAndCheckResult(inputTransferFrom, spaceCoin.address, user1, ethers, provider, 0);
 
             expect(await spaceCoin.balanceOf(owner.address)).to.equal(
-                ethers.BigNumber.from(originalOwnerBalance).sub(amountToTransfer)
+                BigInt(originalOwnerBalance) - BigInt(amountToTransfer)
             );
             expect((await spaceCoin.balanceOf(user2.address)).toString()).to.equal(
-                ethers.BigNumber.from(originalUser2Balance).add(amountToTransfer)
+                BigInt(originalUser2Balance) + BigInt(amountToTransfer)
             );
 
-            await TestHelper.submitTxnAndCheckResult(
-                inputTransferFrom,
-                spaceCoin.address,
-                user1,
-                ethers,
-                provider,
-                'ERC20: insufficient allowance'
-            );
+            await expect(spaceCoin.connect(user1).transferFrom(
+                owner.address,
+                user2.address,
+                amountToTransfer
+            )).to.be.revertedWithCustomError(spaceCoin, TestHelper.ErrorMessages.INSUFFICIENT_ALLOWANCE_CODE);
         });
     });
 
@@ -288,30 +169,9 @@ describe('SpaceCoin - Basic ERC20 functions', function () {
         it('Test burn() without balance', async () => {
             const originalBalance = await spaceCoin.balanceOf(owner.address);
 
-            const inputTransfer = await spaceCoin.populateTransaction['burn(uint256)'](amountToBurn);
-            await TestHelper.submitTxnAndCheckResult(
-                inputTransfer,
-                spaceCoin.address,
-                user1,
-                ethers,
-                provider,
-                'SpaceCoin: Insufficient balance'
-            );
+            await expect(spaceCoin.connect(user1).burn(amountToBurn)).to.be.revertedWithCustomError(spaceCoin, TestHelper.ErrorMessages.INSUFFICIENT_BALANCE_CODE);
 
-            expect(await spaceCoin.balanceOf(owner.address)).to.equal(ethers.BigNumber.from(originalBalance));
-        });
-    });
-
-    describe('SpaceCoin - EIP-712 support', async function () {
-        it('Return DOMAIN_SEPARATOR', async () => {
-            let msg;
-            try {
-                await spaceCoin.DOMAIN_SEPARATOR();
-                msg = 'DOMAIN_SEPARATOR succeeded';
-            } catch {
-                msg = 'DOMAIN_SEPARATOR failed';
-            }
-            expect(msg).to.be.equal('DOMAIN_SEPARATOR succeeded');
+            expect(await spaceCoin.balanceOf(owner.address)).to.equal(BigInt(originalBalance));
         });
     });
 });

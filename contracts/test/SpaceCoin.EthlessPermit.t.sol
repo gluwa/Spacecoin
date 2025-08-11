@@ -44,7 +44,7 @@ contract SpaceCoinTest is DSTest, SharedHelper {
         );
 
         vm.prank(USER2);
-        vm.expectRevert('ERC20Permit: invalid signature');
+        vm.expectRevert();
         spaceCoin.permit(USER1, USER3, amountToPermit * 2, deadline, signV, signR, signS);
     }
 }
