@@ -91,6 +91,7 @@ contract SpaceCoinTest is DSTest, SharedHelper {
             startAfter,
             deadline
         );
+        vm.warp(startAfter + 1);
 
         vm.prank(USER3);
         vm.expectRevert(abi.encodeWithSelector(EIP3009.InvalidSignature.selector));

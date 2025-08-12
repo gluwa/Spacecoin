@@ -81,6 +81,8 @@ contract SpaceCoinAuthorizationTest is DSTest, SharedHelper {
         uint256 validBefore = block.timestamp + 1000;
         bytes32 nonce = keccak256(abi.encodePacked("unique_nonce_4"));
 
+        vm.warp(validAfter + 1);
+
         (uint8 v, bytes32 r, bytes32 s) = eip712_sign_receiveWithAuthorization(
             USER1,
             USER1_PRIVATEKEY,
