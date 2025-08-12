@@ -13,6 +13,12 @@ const VERSION_712 = '1';
 const STANDARD_MINT_AMOUNT = ethers.parseEther('1000');
 const ETHLESS_TRANSFER_SIGNATURE = 'transferWithAuthorization(address,address,uint256,uint256,uint256,bytes32,uint8,bytes32,bytes32)';
 
+const ErrorMessages = {
+    INSUFFICIENT_BALANCE_CODE: 'ERC20InsufficientBalance',
+    INSUFFICIENT_ALLOWANCE_CODE: 'ERC20InsufficientAllowance',
+    INVALID_ARGUMENT_CODE: 'INVALID_ARGUMENT'
+};
+
 let skipInitializeContracts = false;
 
 // LogLevel 0: No logs, 1: Recap of expected rewards, 2: full by block expected rewards math
@@ -156,6 +162,7 @@ module.exports = {
     VERSION_712,
     STANDARD_MINT_AMOUNT,
     ETHLESS_TRANSFER_SIGNATURE,
+    ErrorMessages,
     // FUNCTIONS
     setupProviderAndWallet,
     setupContractTesting,

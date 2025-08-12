@@ -8,7 +8,7 @@ let owner;
 let user1;
 let user2;
 let user3;
-let SpaceCoin;
+let spaceCoin;
 let provider;
 
 describe('SpaceCoin - Ethless Permit functions', function () {
@@ -17,7 +17,7 @@ describe('SpaceCoin - Ethless Permit functions', function () {
     });
 
     beforeEach(async () => {
-        [SpaceCoin] = await TestHelper.setupContractTesting(owner);
+        [spaceCoin] = await TestHelper.setupContractTesting(owner);
     });
 
     describe('SpaceCoin - Regular Ethless Permit', async function () {
@@ -25,326 +25,97 @@ describe('SpaceCoin - Ethless Permit functions', function () {
         const amountToTransfer = 80;
 
         it('Test Ethless Permit', async () => {
-            const blockNumber = await provider.getBlockNumber();
-            const block = await provider.getBlock(blockNumber);
-            const expirationTimestamp = block.timestamp + 20000;
-            const nonce = await spaceCoin.nonces(owner.address);
-
-            const splitSignature = await SignHelper.signPermit(
-                TestHelper.NAME,
-                TestHelper.VERSION_712,
-                spaceCoin.address,
-                owner,
-                user2.address,
-                amountToPermit,
-                nonce.toNumber(),
-                expirationTimestamp
-            );
-            const input = await spaceCoin.populateTransaction.permit(
-                owner.address,
-                user2.address,
-                amountToPermit,
-                expirationTimestamp,
-                splitSignature.v,
-                splitSignature.r,
-                splitSignature.s
-            );
-            await TestHelper.submitTxnAndCheckResult(input, spaceCoin.address, user3, ethers, provider, 0);
-            expect((await spaceCoin.allowance(owner.address, user2.address)).toString()).to.equal(
-                amountToPermit.toString()
-            );
+            const amountToPermit = TestHelper.getRandomIntInRange(10, 200);
+            await TestHelper.executePermitFlow(provider, spaceCoin, owner, user3, user2, amountToPermit);
+            expect(await spaceCoin.allowance(owner.address, user3.address)).to.equal(amountToPermit);
         });
 
         it('Test Ethless Permit can override approve', async () => {
-            const amountToApprove = amountToPermit - 3;
-            const input0 = await spaceCoin.populateTransaction.approve(user2.address, amountToApprove);
-            await TestHelper.submitTxnAndCheckResult(input0, spaceCoin.address, owner, ethers, provider, 0);
-            expect((await spaceCoin.allowance(owner.address, user2.address)).toString()).to.equal(
-                amountToApprove.toString()
-            );
-
-            const blockNumber = await provider.getBlockNumber();
-            const block = await provider.getBlock(blockNumber);
-            const expirationTimestamp = block.timestamp + 20000;
-            const nonce = await spaceCoin.nonces(owner.address);
-
-            const splitSignature = await SignHelper.signPermit(
-                TestHelper.NAME,
-                TestHelper.VERSION_712,
-                spaceCoin.address,
-                owner,
-                user2.address,
-                amountToPermit,
-                nonce.toNumber(),
-                expirationTimestamp
-            );
-            const input = await spaceCoin.populateTransaction.permit(
-                owner.address,
-                user2.address,
-                amountToPermit,
-                expirationTimestamp,
-                splitSignature.v,
-                splitSignature.r,
-                splitSignature.s
-            );
-            await TestHelper.submitTxnAndCheckResult(input, spaceCoin.address, user3, ethers, provider, 0);
-            expect((await spaceCoin.allowance(owner.address, user2.address)).toString()).to.equal(
-                amountToPermit.toString()
-            );
+            const amountToPermit0 = TestHelper.getRandomIntInRange(10, 200);
+            await spaceCoin.approve(user2.address, amountToPermit0);
+            const amountToPermit = amountToPermit0 - 10;
+            await TestHelper.executePermitFlow(provider, spaceCoin, owner, user3, user2, amountToPermit);
+            expect(await spaceCoin.allowance(owner.address, user3.address)).to.equal(amountToPermit);
         });
 
         it('Test Ethless Permit can be overridden by approve', async () => {
-            const blockNumber = await provider.getBlockNumber();
-            const block = await provider.getBlock(blockNumber);
-            const expirationTimestamp = block.timestamp + 20000;
-            const nonce = await spaceCoin.nonces(owner.address);
-
-            const splitSignature = await SignHelper.signPermit(
-                TestHelper.NAME,
-                TestHelper.VERSION_712,
-                spaceCoin.address,
-                owner,
-                user2.address,
-                amountToPermit,
-                nonce.toNumber(),
-                expirationTimestamp
-            );
-            const input = await spaceCoin.populateTransaction.permit(
-                owner.address,
-                user2.address,
-                amountToPermit,
-                expirationTimestamp,
-                splitSignature.v,
-                splitSignature.r,
-                splitSignature.s
-            );
-            await TestHelper.submitTxnAndCheckResult(input, spaceCoin.address, user3, ethers, provider, 0);
-            expect((await spaceCoin.allowance(owner.address, user2.address)).toString()).to.equal(
-                amountToPermit.toString()
-            );
-
-            const amountToApprove = amountToPermit - 9;
-            const input0 = await spaceCoin.populateTransaction.approve(user2.address, amountToApprove);
-            await TestHelper.submitTxnAndCheckResult(input0, spaceCoin.address, owner, ethers, provider, 0);
-            expect((await spaceCoin.allowance(owner.address, user2.address)).toString()).to.equal(
-                amountToApprove.toString()
-            );
+            const amountToPermit0 = TestHelper.getRandomIntInRange(10, 200);
+            await TestHelper.executePermitFlow(provider, spaceCoin, owner, user3, user2, amountToPermit0);
+            const amountToPermit = amountToPermit0 - 10;
+            await spaceCoin.connect(owner).approve(user3.address, amountToPermit);
+            expect(await spaceCoin.allowance(owner.address, user3.address)).to.equal(amountToPermit);
         });
 
         it('Test Ethless Permit & transferFrom', async () => {
-            const blockNumber = await provider.getBlockNumber();
-            const block = await provider.getBlock(blockNumber);
-            const expirationTimestamp = block.timestamp + 20000;
-            const nonce = await spaceCoin.nonces(owner.address);
-
-            const splitSignature = await SignHelper.signPermit(
-                TestHelper.NAME,
-                TestHelper.VERSION_712,
-                spaceCoin.address,
-                owner,
-                user2.address,
-                amountToPermit,
-                nonce.toNumber(),
-                expirationTimestamp
-            );
-            const input = await spaceCoin.populateTransaction.permit(
-                owner.address,
-                user2.address,
-                amountToPermit,
-                expirationTimestamp,
-                splitSignature.v,
-                splitSignature.r,
-                splitSignature.s
-            );
-
-            await TestHelper.submitTxnAndCheckResult(input, spaceCoin.address, user3, ethers, provider, 0);
-            expect((await spaceCoin.allowance(owner.address, user2.address)).toString()).to.equal(
-                amountToPermit.toString()
-            );
+            const amountToPermit = TestHelper.getRandomIntInRange(10, 200);
+            await TestHelper.executePermitFlow(provider, spaceCoin, owner, user3, user2, amountToPermit);
+            expect(await spaceCoin.allowance(owner.address, user3.address)).to.equal(amountToPermit);
 
             const originalOwnerBalance = await spaceCoin.balanceOf(owner.address);
             const originalUser1Balance = await spaceCoin.balanceOf(user1.address);
 
-            const inputTransferFrom = await spaceCoin.connect(user2).populateTransaction.transferFrom(
+            await spaceCoin.connect(user3).transferFrom(
                 owner.address,
                 user1.address,
-                amountToTransfer
+                amountToPermit
             );
-            await TestHelper.submitTxnAndCheckResult(inputTransferFrom, spaceCoin.address, user2, ethers, provider, 0);
-
             expect(await spaceCoin.balanceOf(owner.address)).to.equal(
-                ethers.BigNumber.from(originalOwnerBalance).sub(amountToTransfer)
+                BigInt(originalOwnerBalance) - BigInt(amountToPermit)
             );
             expect((await spaceCoin.balanceOf(user1.address)).toString()).to.equal(
-                ethers.BigNumber.from(originalUser1Balance).add(amountToTransfer)
+                BigInt(originalUser1Balance) + BigInt(amountToPermit)
             );
         });
     });
 
     describe('SpaceCoin - Test expecting failure Ethless Permit', async function () {
-        const amountToPermit = 100;
-        const amountToTransfer = 80;
 
         it('Test Ethless Permit while reusing the same nonce (and signature) on the second permit', async () => {
-            const blockNumber = await provider.getBlockNumber();
-            const block = await provider.getBlock(blockNumber);
-            const expirationTimestamp = block.timestamp + 20000;
-            const nonce = await spaceCoin.nonces(owner.address);
-
-            const signature = await owner._signTypedData(
-                {
-                    name: TestHelper.NAME,
-                    version: TestHelper.VERSION_712,
-                    chainId: network.config.chainId,
-                    verifyingContract: spaceCoin.address
-                },
-                {
-                    // Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)
-                    Permit: [
-                        {
-                            name: 'owner',
-                            type: 'address'
-                        },
-                        {
-                            name: 'spender',
-                            type: 'address'
-                        },
-                        {
-                            name: 'value',
-                            type: 'uint256'
-                        },
-                        {
-                            name: 'nonce',
-                            type: 'uint256'
-                        },
-                        {
-                            name: 'deadline',
-                            type: 'uint256'
-                        }
-                    ]
-                },
-                {
-                    owner: owner.address,
-                    spender: user2.address,
-                    value: amountToPermit,
-                    nonce: nonce,
-                    deadline: expirationTimestamp
-                }
-            );
-            const splitSignature = ethers.utils.splitSignature(signature);
-            const input = await spaceCoin.populateTransaction.permit(
-                owner.address,
-                user2.address,
-                amountToPermit,
-                expirationTimestamp,
-                splitSignature.v,
-                splitSignature.r,
-                splitSignature.s
-            );
-            await TestHelper.submitTxnAndCheckResult(input, spaceCoin.address, user3, ethers, provider, 0);
-            expect((await spaceCoin.allowance(owner.address, user2.address)).toString()).to.equal(
-                amountToPermit.toString()
-            );
-            await TestHelper.submitTxnAndCheckResult(
-                input,
-                spaceCoin.address,
-                user3,
-                ethers,
-                provider,
-                'ERC20Permit: invalid signature'
-            );
-        });
-
-        it('Test Ethless Permit & 2x transferFrom, the second one should fail as it will be higher than the remaining allowance', async () => {
-            const blockNumber = await provider.getBlockNumber();
-            const block = await provider.getBlock(blockNumber);
-            const expirationTimestamp = block.timestamp + 20000;
-            const nonce = await spaceCoin.nonces(owner.address);
-
-            const signature = await owner._signTypedData(
-                {
-                    name: TestHelper.NAME,
-                    version: TestHelper.VERSION_712,
-                    chainId: network.config.chainId,
-                    verifyingContract: spaceCoin.address
-                },
-                {
-                    // Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)
-                    Permit: [
-                        {
-                            name: 'owner',
-                            type: 'address'
-                        },
-                        {
-                            name: 'spender',
-                            type: 'address'
-                        },
-                        {
-                            name: 'value',
-                            type: 'uint256'
-                        },
-                        {
-                            name: 'nonce',
-                            type: 'uint256'
-                        },
-                        {
-                            name: 'deadline',
-                            type: 'uint256'
-                        }
-                    ]
-                },
-                {
-                    owner: owner.address,
-                    spender: user2.address,
-                    value: amountToPermit,
-                    nonce: nonce,
-                    deadline: expirationTimestamp
-                }
-            );
-            const splitSignature = ethers.utils.splitSignature(signature);
-            const input = await spaceCoin.populateTransaction.permit(
-                owner.address,
-                user2.address,
-                amountToPermit,
-                expirationTimestamp,
-                splitSignature.v,
-                splitSignature.r,
-                splitSignature.s
-            );
-            await TestHelper.submitTxnAndCheckResult(input, spaceCoin.address, user3, ethers, provider, 0);
-            expect((await spaceCoin.allowance(owner.address, user2.address)).toString()).to.equal(
-                amountToPermit.toString()
-            );
+            const amountToPermit = TestHelper.getRandomIntInRange(10, 200);
+            await TestHelper.executePermitFlow(provider, spaceCoin, owner, user3, user2, amountToPermit);
+            expect(await spaceCoin.allowance(owner.address, user3.address)).to.equal(amountToPermit);
 
             const originalOwnerBalance = await spaceCoin.balanceOf(owner.address);
             const originalUser1Balance = await spaceCoin.balanceOf(user1.address);
 
-            const inputTransferFrom = await spaceCoin.connect(user2).populateTransaction.transferFrom(
+            await TestHelper.executePermitFlow(provider, spaceCoin, owner, user3, user2, amountToPermit);
+            expect(await spaceCoin.allowance(owner.address, user3.address)).to.equal(amountToPermit);
+
+            await spaceCoin.connect(user3).transferFrom(
                 owner.address,
                 user1.address,
-                amountToTransfer
+                amountToPermit
             );
-            await TestHelper.submitTxnAndCheckResult(inputTransferFrom, spaceCoin.address, user2, ethers, provider, 0);
-
             expect(await spaceCoin.balanceOf(owner.address)).to.equal(
-                ethers.BigNumber.from(originalOwnerBalance).sub(amountToTransfer)
+                BigInt(originalOwnerBalance) - BigInt(amountToPermit)
             );
             expect((await spaceCoin.balanceOf(user1.address)).toString()).to.equal(
-                ethers.BigNumber.from(originalUser1Balance).add(amountToTransfer)
+                BigInt(originalUser1Balance) + BigInt(amountToPermit)
             );
+        });
 
-            const inputTransferFrom2 = await spaceCoin.connect(user2).populateTransaction.transferFrom(
+        it('Test Ethless Permit & 2x transferFrom, the second one should fail as it will be higher than the remaining allowance', async () => {
+            const amountToPermit = TestHelper.getRandomIntInRange(10, 200);
+            await TestHelper.executePermitFlow(provider, spaceCoin, owner, user3, user2, amountToPermit);
+            expect(await spaceCoin.allowance(owner.address, user3.address)).to.equal(amountToPermit);
+
+            const originalOwnerBalance = await spaceCoin.balanceOf(owner.address);
+            const originalUser1Balance = await spaceCoin.balanceOf(user1.address);
+
+            await TestHelper.executePermitFlow(provider, spaceCoin, owner, user3, user2, amountToPermit);
+            expect(await spaceCoin.allowance(owner.address, user3.address)).to.equal(amountToPermit);
+
+            await spaceCoin.connect(user3).transferFrom(
                 owner.address,
                 user1.address,
-                amountToTransfer
+                amountToPermit
             );
-            await TestHelper.submitTxnAndCheckResult(
-                inputTransferFrom2,
-                spaceCoin.address,
-                user2,
-                ethers,
-                provider,
-                'ERC20: insufficient allowance'
+            expect(await spaceCoin.allowance(owner.address, user3.address)).to.equal(0);
+            expect(await spaceCoin.balanceOf(owner.address)).to.equal(
+                BigInt(originalOwnerBalance) - BigInt(amountToPermit)
+            );
+            expect((await spaceCoin.balanceOf(user1.address)).toString()).to.equal(
+                BigInt(originalUser1Balance) + BigInt(amountToPermit)
             );
         });
     });

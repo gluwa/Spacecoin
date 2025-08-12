@@ -215,4 +215,93 @@ contract SharedHelper is DSTest {
         assertEq(spaceCoin.balanceOf(signer_), orginalAmountSigner - amountToTransfer_);
         assertEq(spaceCoin.balanceOf(recipient_), orginalAmount + amountToTransfer_);
     }
+
+    function eip712_sign_cancelAuthorization(
+        address authorizer_,
+        uint256 authorizerPrivateKey_,
+        bytes32 nonce_
+    ) internal returns (uint8 v, bytes32 r, bytes32 s) {
+        return vm.sign(
+            authorizerPrivateKey_,
+            keccak256(
+                abi.encodePacked(
+                    '\x19\x01',
+                    spaceCoin.DOMAIN_SEPARATOR(),
+                    keccak256(
+                        abi.encode(
+                            keccak256('CancelAuthorization(address authorizer,bytes32 nonce)'),
+                            authorizer_,
+                            nonce_
+                        )
+                    )
+                )
+            )
+        );
+    }
+
+    function eip712_sign_receiveWithAuthorization(
+        address sender_,
+        uint256 senderPrivateKey_,
+        address recipient_,
+        uint256 amount_,
+        bytes32 nonce_,
+        uint256 validAfter_,
+        uint256 validBefore_
+    ) internal returns (uint8 v, bytes32 r, bytes32 s) {
+        bytes32 structHash = keccak256(
+            abi.encode(
+                spaceCoin.RECEIVE_WITH_AUTHORIZATION_TYPEHASH(),
+                sender_,
+                recipient_,
+                amount_,
+                validAfter_,
+                validBefore_,
+                nonce_
+            )
+        );
+
+        bytes32 digest = keccak256(abi.encodePacked('\x19\x01', spaceCoin.DOMAIN_SEPARATOR(), structHash));
+
+        return vm.sign(senderPrivateKey_, digest);
+    }
+
+    // Helper function for simple transfer with authorization
+    function eip712_transferWithAuthorization_simple(
+        address signer_,
+        uint256 signerPrivateKey_,
+        uint256 amountToTransfer_,
+        bytes32 nonce_,
+        address recipient_,
+        address sender_,
+        uint256 validAfter_,
+        uint256 validBefore_,
+        bytes memory expectedError
+    ) internal {
+        (uint8 v, bytes32 r, bytes32 s) = eip712_sign_transferWithAuthorization(
+            signer_,
+            signerPrivateKey_,
+            recipient_,
+            amountToTransfer_,
+            nonce_,
+            validAfter_,
+            validBefore_
+        );
+
+        vm.prank(sender_);
+        if (expectedError.length > 0) {
+            vm.expectRevert(expectedError);
+        }
+
+        spaceCoin.transferWithAuthorization(
+            signer_,
+            recipient_,
+            amountToTransfer_,
+            validAfter_,
+            validBefore_,
+            nonce_,
+            v,
+            r,
+            s
+        );
+    }
 }
