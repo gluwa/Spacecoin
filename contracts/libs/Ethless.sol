@@ -11,7 +11,7 @@ abstract contract Ethless is EIP3009Base {
     /**
      * @notice Executes a token transfer authorized by an off-chain signature.
      * @param from          Address of the authorizer (payer).
-     * @param to            Recipient address (must be msg.sender).
+     * @param to            Recipient address 
      * @param value         Amount to transfer.
      * @param validAfter    Time (unix) after which the authorization becomes valid.
      * @param validBefore   Time (unix) before which the authorization expires.

@@ -23,13 +23,13 @@ contract SpaceCoinTest is DSTest, SharedHelper {
     // Ethless Transfer
     function test_spaceCoin_ethless_transfer() public {
         uint256 amountToTransfer = 1000;
-        uint256 startOn = block.timestamp;
+        uint256 startAfter = block.timestamp;
         bytes32 nonce = 0x0000000000000000000000000000000000000000000000000000000000eeeeaa;
 
         uint256 deadline = block.timestamp + 100;
         spaceCoin.transfer(USER1, amountToTransfer);
 
-        vm.warp(startOn + 1);
+        vm.warp(startAfter + 1);
         eip712_transferWithAuthorization_verified(
             USER1,
             USER1_PRIVATEKEY,
@@ -37,20 +37,20 @@ contract SpaceCoinTest is DSTest, SharedHelper {
             nonce,
             USER3,
             USER2,
-            startOn,
+            startAfter,
             deadline
         );
     }
 
     function test_spaceCoin_ethless_transfer_reuseSameNonce() public {
         uint256 amountToTransfer = 1000;
-        uint256 startOn = block.timestamp;
+        uint256 startAfter = block.timestamp;
         bytes32 nonce = 0x000000000000000000000000000000000000000000000000000000000003fdd2;
 
         uint256 deadline = block.timestamp + 100;
         spaceCoin.transfer(USER1, amountToTransfer);
 
-        vm.warp(startOn + 1);
+        vm.warp(startAfter + 1);
         eip712_transferWithAuthorization_verified(
             USER1,
             USER1_PRIVATEKEY,
@@ -58,7 +58,7 @@ contract SpaceCoinTest is DSTest, SharedHelper {
             nonce,
             USER3,
             USER2,
-            startOn,
+            startAfter,
             deadline
         );
         eip712_transferWithAuthorization(
@@ -68,7 +68,7 @@ contract SpaceCoinTest is DSTest, SharedHelper {
             nonce,
             USER3,
             USER2,
-            startOn,
+            startAfter,
             deadline,
             abi.encodeWithSelector(EIP3009.AuthorizationUsedOrCanceled.selector)
         );
@@ -76,7 +76,7 @@ contract SpaceCoinTest is DSTest, SharedHelper {
 
     function test_spaceCoin_ethless_transfer_wrongSender() public {
         uint256 amountToTransfer = 1000;
-        uint256 startOn = block.timestamp;
+        uint256 startAfter = block.timestamp;
         uint256 deadline = block.timestamp + 100;
         bytes32 nonce = bytes32(block.number);
         spaceCoin.transfer(USER1, amountToTransfer);
@@ -88,7 +88,7 @@ contract SpaceCoinTest is DSTest, SharedHelper {
             USER3,
             lowerAmountToTransfer,
             nonce,
-            startOn,
+            startAfter,
             deadline
         );
 
@@ -98,7 +98,7 @@ contract SpaceCoinTest is DSTest, SharedHelper {
             USER1,
             USER3,
             lowerAmountToTransfer,
-            startOn,
+            startAfter,
             deadline,
             nonce,
             signV,
@@ -110,12 +110,12 @@ contract SpaceCoinTest is DSTest, SharedHelper {
 
     function test_spaceCoin_ethless_transfer_topUpInBetween() public {
         uint256 amountToTransfer = 1000 + 3;
-        uint256 startOn = block.timestamp;
+        uint256 startAfter = block.timestamp;
         uint256 deadline = block.timestamp + 100;
         bytes32 nonce1 = 0x0000000000000000000000000000000000000000000000000000001000000ffe;
         spaceCoin.transfer(USER1, amountToTransfer);
 
-        vm.warp(startOn + 1);
+        vm.warp(startAfter + 1);
         eip712_transferWithAuthorization_verified(
             USER1,
             USER1_PRIVATEKEY,
@@ -123,7 +123,7 @@ contract SpaceCoinTest is DSTest, SharedHelper {
             nonce1,
             USER3,
             USER2,
-            startOn,
+            startAfter,
             deadline
         );
 
@@ -138,7 +138,7 @@ contract SpaceCoinTest is DSTest, SharedHelper {
             nonce2,
             USER3,
             USER2,
-            startOn,
+            startAfter,
             deadline
         );
     }

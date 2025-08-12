@@ -62,11 +62,12 @@ contract SpaceCoinTest is DSTest, SharedHelper {
     function test_spaceCoin_multiTxn_allEthless_sameNonce_sameBlock() public {
         uint256 AMOUNT_TO_TRANSFER = 100 * 10 ** 18;
         uint256 AMOUNT_TO_RESERVE = 40 * 10 ** 18;
-        uint256 startOn = block.timestamp;
+        uint256 startAfter = block.timestamp;
         uint256 deadline = block.timestamp+ 100;
         uint256 feeToPay = 100;
         bytes32 nonce = 0x000000000000000000000000000000000000000000000000000000000000d515;
         spaceCoin.transfer(USER1, AMOUNT_TO_TRANSFER + AMOUNT_TO_RESERVE + feeToPay);
+        vm.warp(startAfter + 1);
 
         eip712_transferWithAuthorization_verified(
             USER1,
@@ -75,7 +76,7 @@ contract SpaceCoinTest is DSTest, SharedHelper {
             nonce,
             USER3,
             USER2,
-            startOn,
+            startAfter,
             deadline
         );
 
@@ -85,9 +86,10 @@ contract SpaceCoinTest is DSTest, SharedHelper {
     function test_spaceCoin_multiTxn_burnFromAfterTransfer_sameBlock() public {
         uint256 amountToTransfer = 1000;
         uint256 amountToBurn = 600;
-        uint256 startOn = block.timestamp;
+        uint256 startAfter = block.timestamp;
         uint256 deadline = block.timestamp+ 100;
         bytes32 nonce = 0x000000000000000000000000000000000000000000000000000000000001e725;
+        vm.warp(startAfter + 1);
 
         uint256 originalBalance = amountToTransfer + amountToBurn + 1;
         spaceCoin.transfer(USER1, originalBalance);
@@ -99,7 +101,7 @@ contract SpaceCoinTest is DSTest, SharedHelper {
             nonce,
             USER3,
             USER2,
-            startOn,
+            startAfter,
             deadline
         );
         eip712_permit_verified(USER1, USER1_PRIVATEKEY, amountToBurn, spaceCoin.nonces(USER1), USER2, USER2, deadline);

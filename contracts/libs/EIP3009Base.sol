@@ -37,7 +37,7 @@ abstract contract EIP3009Base is EIP3009, ERC20, EIP712 {
     /**
      * @notice Executes a token transfer authorized by an off-chain signature.
      * @param from          Address of the authorizer (payer).
-     * @param to            Recipient address (must be msg.sender).
+     * @param to            Recipient address 
      * @param value         Amount to transfer.
      * @param validAfter    Time (unix) after which the authorization becomes valid.
      * @param validBefore   Time (unix) before which the authorization expires.
@@ -122,7 +122,7 @@ abstract contract EIP3009Base is EIP3009, ERC20, EIP712 {
      */
     function _checkValidAuthorization(address authorizer, bytes32 nonce, uint256 validAfter, uint256 validBefore) private view {
         uint256 time = block.timestamp;
-        if (time < validAfter || time >= validBefore) {
+        if (time <= validAfter || time >= validBefore) {
             revert NotInAuthorizationTime();
         }
         _checkUnusedAuthorization(authorizer, nonce);

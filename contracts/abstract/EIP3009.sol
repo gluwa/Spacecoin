@@ -21,33 +21,33 @@ abstract contract EIP3009 {
     bytes32 public constant RECEIVE_WITH_AUTHORIZATION_TYPEHASH = 0xd099cc98ef71107a616c4f0f941f04c322d8e254fe26b3c6668db87aae413de8;
 
     /// @notice Returns true if the given nonce for the authorizer has been used or canceled
-    /// @param authorizer The address that signed the message
-    /// @param nonce The unique nonce included in the message
+    /// @param authorizer   The address that signed the message
+    /// @param nonce        The unique nonce included in the message to prevent replay
     function authorizationState(address authorizer, bytes32 nonce) external view virtual returns (bool);
 
     /// @notice Transfer tokens with a signed authorization
     /// @dev Signature must be a valid EIP-712 signature from `from` over the transfer data
-    /// @param from Address of the token holder (authorizer)
-    /// @param to Recipient address
-    /// @param value Amount to transfer
-    /// @param validAfter Earliest time the authorization is valid (unix timestamp)
-    /// @param validBefore Latest time the authorization is valid (unix timestamp)
-    /// @param nonce Unique nonce to prevent replay
-    /// @param v ECDSA v
-    /// @param r ECDSA r
-    /// @param s ECDSA s
+    /// @param from         Address of the token holder (authorizer)
+    /// @param to           Recipient address
+    /// @param value        Amount to transfer
+    /// @param validAfter   Earliest time the authorization is valid (unix timestamp)
+    /// @param validBefore  Latest time the authorization is valid (unix timestamp)
+    /// @param nonce        Unique nonce to prevent replay
+    /// @param v            ECDSA v
+    /// @param r            ECDSA r
+    /// @param s            ECDSA s
     function transferWithAuthorization(address from, address to, uint256 value, uint256 validAfter, uint256 validBefore, bytes32 nonce, uint8 v, bytes32 r, bytes32 s) external virtual;
 
     /// @notice Receive tokens with a signed authorization from the token holder
     /// @dev Prevents front-running by requiring `to == msg.sender`
     /// @param from Address of the token holder (authorizer)
-    /// @param to Recipient address (must equal msg.sender)
-    /// @param value Amount to transfer
-    /// @param validAfter Earliest time the authorization is valid
-    /// @param validBefore Latest time the authorization is valid
-    /// @param nonce Unique nonce
-    /// @param v ECDSA v
-    /// @param r ECDSA r
-    /// @param s ECDSA s
+    /// @param to           Recipient address (must equal msg.sender)
+    /// @param value        Amount to transfer
+    /// @param validAfter   Earliest time the authorization is valid
+    /// @param validBefore  Latest time the authorization is valid
+    /// @param nonce        Unique nonce to prevent replay
+    /// @param v            ECDSA v
+    /// @param r            ECDSA r
+    /// @param s            ECDSA s
     function receiveWithAuthorization(address from, address to, uint256 value, uint256 validAfter, uint256 validBefore, bytes32 nonce, uint8 v, bytes32 r, bytes32 s) external virtual;
 }
